@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:gradient_widgets/gradient_widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
@@ -34,50 +36,34 @@ class _LoginPageState extends State<LoginPage> {
     print(email);
     print(password);
     // SERVER LOGIN API URL
-    Uri url = Uri.parse('http://localhost:8080/phpLogin.php');
+    FirebaseAuth auth = FirebaseAuth.instance;
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: emailController.text, password: passwordController.text);
 
-    // Store all data with Param Name.
-    var data = {"Usuario": email, "Password": password};
-
-    // Starting Web API Call.
-    var response = await http.post(url, body: data);
-
-    // Getting Server response into variable.
-    var message = json.decode(response.body);
-
-    print(message);
-    // If the Response Message is Matched.
-    if (message == "Success") {
-      // Hiding the CircularProgressIndicator.
-      setState(() {
-        visible = false;
+      auth.authStateChanges().listen((event) {
+        if (event!.email != null) {
+          Fluttertoast.showToast(
+              msg: "Bienvenido!",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.CENTER,
+              timeInSecForIosWeb: 4,
+              backgroundColor: Colors.red,
+              textColor: Colors.white,
+              fontSize: 16.0);
+          // Navigate to Profile Screen & Sending Email to Next Screen.
+          Navigator.of(context).pushReplacementNamed('/screen2');
+        } else {
+          print('no');
+        }
       });
-      Fluttertoast.showToast(
-          msg: "Bienvenido!",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 4,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0);
-      // Navigate to Profile Screen & Sending Email to Next Screen.
-      Navigator.of(context).pushReplacementNamed('/screen2');
-    } else {
-      // If Email or Password did not Matched.
-      // Hiding the CircularProgressIndicator.
-      setState(() {
-        visible = false;
-      });
-
-      // Showing Alert Dialog with Response JSON Message.
-      Fluttertoast.showToast(
-          msg: "Esta cuenta ya existe",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 3,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        print('No user found for that email.');
+      } else if (e.code == 'wrong-password') {
+        print('Wrong password provided for that user.');
+      }
     }
   }
 
@@ -90,11 +76,37 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        title: titleBar(),
+      body: Stack(
+        children: [
+          Container(
+              decoration: BoxDecoration(
+                  image: DecorationImage(
+                      image: AssetImage('assets/images/poke2.jpeg'),
+                      fit: BoxFit.cover))),
+          vistaMenu(size),
+          Container(
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(top: 300, right: 100),
+            child: Column(
+              children: [
+                Text('Pokemon',
+                    style: GoogleFonts.getFont(
+                      'Press Start 2P',
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                    )),
+                Text('Search',
+                    style: GoogleFonts.getFont('Press Start 2P',
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                        fontStyle: FontStyle.italic)),
+              ],
+            ),
+          )
+        ],
       ),
-      body: vistaMenu(),
     );
   }
 
@@ -121,107 +133,118 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  SingleChildScrollView vistaMenu() {
+  vistaMenu(Size size) {
     return SingleChildScrollView(
-        child: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Text('Welcome!',
+        child: Container(
+      padding: EdgeInsets.only(top: 200, left: 40),
+      width: size.width / 3,
+      child: Card(
+        elevation: 5.0,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text('Hola!',
+                    style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'ROBOTO'))),
+            Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text('Ya tienes cuenta?',
+                    style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'ROBOTO'))),
+            Container(
+                width: 280,
+                padding: EdgeInsets.all(10.0),
+                child: Form(
+                  key: _formKey,
+                  child: TextFormField(
+                    controller: emailController,
+                    autocorrect: true,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return 'Introduce un usuario';
+                      }
+                    },
+                    decoration: InputDecoration(hintText: 'Email'),
+                  ),
+                )),
+            Container(
+                width: 280,
+                padding: EdgeInsets.all(10.0),
+                child: Form(
+                  key: _formKey2,
+                  child: TextFormField(
+                    controller: passwordController,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return 'Introduce tu contraseña';
+                      }
+                    },
+                    autocorrect: true,
+                    obscureText: true,
+                    decoration: InputDecoration(hintText: 'Contraseña'),
+                  ),
+                )),
+            SizedBox(
+              height: 10,
+            ),
+            GradientButton(
+              increaseHeightBy: 20.0,
+              increaseWidthBy: 100.0,
+              elevation: 5,
+              child: Text('Inicia',
                   style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'ROBOTO'))),
-          Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Text('Have alredy account?',
-                  style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'ROBOTO'))),
-          Container(
-              width: 280,
-              padding: EdgeInsets.all(10.0),
-              child: Form(
-                key: _formKey,
-                child: TextFormField(
-                  controller: emailController,
-                  autocorrect: true,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return 'Introduce un usuario';
-                    }
-                  },
-                  decoration: InputDecoration(hintText: 'Enter Your User'),
-                ),
-              )),
-          Container(
-              width: 280,
-              padding: EdgeInsets.all(10.0),
-              child: Form(
-                key: _formKey2,
-                child: TextFormField(
-                  controller: passwordController,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return 'Introduce tu contraseña';
-                    }
-                  },
-                  autocorrect: true,
-                  obscureText: true,
-                  decoration: InputDecoration(hintText: 'Enter Your Password'),
-                ),
-              )),
-          SizedBox(
-            height: 10,
-          ),
-          GradientButton(
-            increaseHeightBy: 20.0,
-            increaseWidthBy: 100.0,
-            elevation: 5,
-            child: Text('Enter',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18)),
-            callback: () {
-              if (_formKey.currentState!.validate() &&
-                  _formKey2.currentState!.validate()) {
-                userLogin();
-              } else {
-                Fluttertoast.showToast(
-                    msg: "Campos vacios",
-                    toastLength: Toast.LENGTH_SHORT,
-                    gravity: ToastGravity.CENTER,
-                    timeInSecForIosWeb: 1,
-                    backgroundColor: Colors.red,
-                    textColor: Colors.white,
-                    fontSize: 16.0);
-              }
-            },
-            gradient: Gradients.buildGradient(Alignment.bottomCenter,
-                Alignment.topCenter, [Colors.red, Colors.redAccent]),
-            shadowColor: Gradients.backToFuture.colors.last.withOpacity(0.25),
-          ),
-          TextButton(
-              onPressed: () {
-                Navigator.of(context).pushReplacementNamed('/screen1');
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18)),
+              callback: () {
+                if (_formKey.currentState!.validate() &&
+                    _formKey2.currentState!.validate()) {
+                  userLogin();
+                } else {
+                  Fluttertoast.showToast(
+                      msg: "Campos vacios",
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.CENTER,
+                      timeInSecForIosWeb: 1,
+                      backgroundColor: Colors.red,
+                      textColor: Colors.white,
+                      fontSize: 16.0);
+                }
               },
-              child: Text(
-                'Not Have account?, register please.',
-                style: TextStyle(
-                    decoration: TextDecoration.underline,
-                    color: Colors.black,
-                    fontFamily: 'ROBOTO'),
-              )),
-          Visibility(
-              visible: visible,
-              child: Container(
-                  margin: EdgeInsets.only(bottom: 30),
-                  child: CircularProgressIndicator())),
-        ],
+              gradient: Gradients.buildGradient(
+                  Alignment.centerLeft, Alignment.centerRight, [
+                Colors.yellow,
+                Colors.yellow,
+                Colors.yellow.shade700,
+                Colors.redAccent
+              ]),
+              shadowColor: Gradients.backToFuture.colors.last.withOpacity(0.25),
+            ),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacementNamed('/screen1');
+                },
+                child: Text(
+                  'Registrate con nosotros',
+                  style: TextStyle(
+                      decoration: TextDecoration.underline,
+                      color: Colors.black,
+                      fontFamily: 'ROBOTO'),
+                )),
+            Visibility(
+                visible: visible,
+                child: Container(
+                    margin: EdgeInsets.only(bottom: 30),
+                    child: CircularProgressIndicator(color: Colors.black))),
+          ],
+        ),
       ),
     ));
   }

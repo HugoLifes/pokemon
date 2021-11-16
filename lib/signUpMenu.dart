@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:gradient_widgets/gradient_widgets.dart';
 import 'package:http/http.dart' as http;
 import '../profileScreen.dart';
@@ -23,123 +26,143 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Future register() async {
     print(emailController.text);
-    Uri url = Uri.parse("http://localhost:8080/register.php");
-    var response = await http.post(
-      url,
-      body: {
-        "Usuario": emailController.text.toString(),
-        "Password": passwordController.text.toString(),
-      },
-    );
+    FirebaseAuth auth = FirebaseAuth.instance;
 
-    var data = json.encode(response.body);
-    if (data == "Error") {
-      Fluttertoast.showToast(
-          msg: "Esta cuenta ya existe",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 3,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0);
-    } else {
-      Fluttertoast.showToast(
-          msg: "Bienvenido!",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 4,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0);
-      Navigator.of(context).pushReplacementNamed('/screen2');
+    try {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+
+      print(userCredential.user);
+      print(userCredential.additionalUserInfo);
+
+      auth.authStateChanges().listen((event) {
+        if (event!.email != null) {
+          Fluttertoast.showToast(
+              msg: "Bienvenido!",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.CENTER,
+              timeInSecForIosWeb: 4,
+              backgroundColor: Colors.red,
+              textColor: Colors.white,
+              fontSize: 16.0);
+          // Navigate to Profile Screen & Sending Email to Next Screen.
+          Navigator.of(context).pushReplacementNamed('/screen2');
+        } else {
+          print('no');
+        }
+      });
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        print('The password provided is too weak.');
+      } else if (e.code == 'email-already-in-use') {
+        print('The account already exists for that email.');
+      }
+    } catch (e) {
+      print(e);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        title: titleBar(),
-      ),
-      body: vistaMenu(),
-    );
-  }
-
-  Row titleBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+        body: Stack(
       children: [
-        Text('BUSQUEDA',
-            style: TextStyle(
-                color: Colors.black,
-                fontFamily: 'Roboto',
-                fontSize: 24,
-                fontWeight: FontWeight.bold)),
-        SizedBox(
-          width: 5,
-        ),
-        Text('POKEMON',
-            style: TextStyle(
-                color: Colors.yellowAccent[700],
-                fontFamily: 'Roboto',
-                fontSize: 24,
-                fontWeight: FontWeight.bold))
+        Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                    image: AssetImage('assets/images/poke2.jpeg'),
+                    fit: BoxFit.cover))),
+        vistaMenu(size),
+        Container(
+          alignment: Alignment.centerRight,
+          padding: EdgeInsets.only(top: 300, right: 100),
+          child: Column(
+            children: [
+              Text('Pokemon',
+                  style: GoogleFonts.getFont(
+                    'Press Start 2P',
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                  )),
+              Text('Search',
+                  style: GoogleFonts.getFont('Press Start 2P',
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                      fontStyle: FontStyle.italic)),
+            ],
+          ),
+        )
       ],
-    );
+    ));
   }
 
-  SingleChildScrollView vistaMenu() {
+  vistaMenu(Size size) {
     return SingleChildScrollView(
-        child: Center(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Text('Create account with us',
-                  style: TextStyle(fontSize: 21))),
-          Container(
-              width: 280,
-              padding: EdgeInsets.all(10.0),
-              child: Form(
-                key: _formKey,
-                child: TextFormField(
-                  controller: emailController,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return 'Introduce tu contraseña';
-                    }
-                  },
-                  autocorrect: true,
-                  decoration:
-                      InputDecoration(hintText: 'Enter Your Email Here'),
-                ),
-              )),
-          Container(
-              width: 280,
-              padding: EdgeInsets.all(10.0),
-              child: Form(
-                key: _formKey2,
-                child: TextFormField(
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return 'Introduce tu contraseña';
-                    }
-                  },
-                  controller: passwordController,
-                  autocorrect: true,
-                  obscureText: true,
-                  decoration:
-                      InputDecoration(hintText: 'Enter Your Password Here'),
-                ),
-              )),
-          botonRegistrar(),
-          Visibility(
-              visible: visible,
-              child: Container(
-                  margin: EdgeInsets.only(bottom: 30),
-                  child: CircularProgressIndicator())),
-        ],
+        child: Container(
+      padding: EdgeInsets.only(top: 200, left: 40),
+      width: size.width / 3,
+      child: Card(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Text('Create account with us',
+                    style: TextStyle(fontSize: 21))),
+            Container(
+                width: 280,
+                padding: EdgeInsets.all(10.0),
+                child: Form(
+                  key: _formKey,
+                  child: TextFormField(
+                    controller: emailController,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return 'Introduce tu contraseña';
+                      }
+                    },
+                    autocorrect: true,
+                    decoration: InputDecoration(hintText: 'Registra tu email'),
+                  ),
+                )),
+            Container(
+                width: 280,
+                padding: EdgeInsets.all(10.0),
+                child: Form(
+                  key: _formKey2,
+                  child: TextFormField(
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return 'Introduce tu contraseña';
+                      } else {
+                        if (v.length < 5) {
+                          return 'Contraseña muy corta';
+                        }
+                      }
+                    },
+                    controller: passwordController,
+                    autocorrect: true,
+                    obscureText: true,
+                    decoration:
+                        InputDecoration(hintText: 'Registra tu contraseña'),
+                  ),
+                )),
+            botonRegistrar(),
+            SizedBox(
+              height: 10,
+            ),
+            Visibility(
+                visible: visible,
+                child: Container(
+                    margin: EdgeInsets.only(bottom: 30),
+                    child: CircularProgressIndicator())),
+          ],
+        ),
       ),
     ));
   }
@@ -167,8 +190,13 @@ class _SignUpPageState extends State<SignUpPage> {
               fontSize: 16.0);
         }
       },
-      gradient: Gradients.buildGradient(Alignment.bottomCenter,
-          Alignment.topCenter, [Colors.red, Colors.redAccent]),
+      gradient: Gradients.buildGradient(
+          Alignment.centerLeft, Alignment.centerRight, [
+        Colors.yellow,
+        Colors.yellow,
+        Colors.yellow.shade700,
+        Colors.redAccent
+      ]),
       shadowColor: Gradients.backToFuture.colors.last.withOpacity(0.25),
     );
   }
