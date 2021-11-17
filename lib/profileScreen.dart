@@ -11,7 +11,7 @@ import 'package:http/http.dart' as http;
 
 class ProfileScreen extends StatefulWidget {
   final String user;
-  ProfileScreen({Key? key, this.user = ''}) : super(key: key);
+  ProfileScreen({Key? key, this.user = 'Hugo'}) : super(key: key);
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -58,12 +58,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        drawerScrimColor: Colors.grey.withOpacity(0.5),
+        drawer: Drawer(
+          child: ListView(
+            children: <Widget>[
+              UserAccountsDrawerHeader(
+                accountName: Text(widget.user),
+                accountEmail: Text('@gmail.com'),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Text(
+                    widget.user[0],
+                    style: TextStyle(fontSize: 40),
+                  ),
+                ),
+              ),
+              ListTile(
+                title: Text('Home'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text('Profile'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text('Logout'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+        appBar: AppBar(
+          title: Text(
+            'Buscar',
+            style: TextStyle(color: Colors.black),
+          ),
+          iconTheme: IconThemeData(color: Colors.black),
+          backgroundColor: Colors.white,
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.search, color: Colors.black),
+              onPressed: () {
+                showSearch(
+                    context: context,
+                    delegate: CustomSearchDelegate(poke: poke));
+              },
+            ),
+          ],
+        ),
         body: Stack(
-      fit: StackFit.expand,
-      children: [
-        buildFloatingSearchBar(),
-      ],
-    ));
+          fit: StackFit.expand,
+          children: [
+            gridview(),
+          ],
+        ));
   }
 
   Widget buildFloatingSearchBar() {
@@ -132,9 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: Stack(
           children: [
             Column(
-              children: [
-                gridview(),
-              ],
+              children: [],
             )
           ],
         ));
@@ -238,4 +290,88 @@ class Poke {
       this.icon,
       this.fav = false,
       this.color});
+}
+
+class CustomSearchDelegate extends SearchDelegate {
+  List<Poke>? poke;
+
+  CustomSearchDelegate({this.poke});
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  /// construye los resultados de la busqueda
+  @override
+  Widget buildResults(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        height: 90,
+        padding: EdgeInsets.all(8),
+        width: MediaQuery.of(context).size.width / 1.2,
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(color: Colors.grey, blurRadius: 7, offset: Offset(0, 5))
+            ]),
+        child: Column(
+          children: [
+            Text(query),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// construye posibles sugerencias de busqueda
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestionsList =
+        poke?.where((p) => p.name!.toLowerCase().contains(query)).toList();
+
+    return ListView.builder(
+      itemCount: suggestionsList?.length ?? 0,
+      itemBuilder: (context, index) {
+        return ListTile(
+          onTap: () async {},
+          leading: Icon(Icons.search),
+          title: RichText(
+            text: TextSpan(
+              text: poke![index].name!.substring(0, query.length),
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+              children: [
+                TextSpan(
+                  text: poke![index].name!.substring(query.length),
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          subtitle: Text(poke![index].name!),
+        );
+      },
+    );
+  }
 }
