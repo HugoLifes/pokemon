@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:html';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -8,10 +11,15 @@ import 'package:material_floating_search_bar/material_floating_search_bar.dart';
 import 'package:pokemon/getPoke.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:pokemon/loginMenu.dart';
+import 'package:pokemon/pokePage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+// ignore: must_be_immutable
 class ProfileScreen extends StatefulWidget {
-  final String user;
-  ProfileScreen({Key? key, this.user = 'Hugo'}) : super(key: key);
+  final String? user;
+  String? email;
+  ProfileScreen({Key? key, this.user = "hola", this.email}) : super(key: key);
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -36,6 +44,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool favorite = false;
   List<Poke> fav = [];
   final controller = FloatingSearchBarController();
+  Poke? hi;
+  List<Poke> yeah = [];
+  FirebaseFirestore fireStore = FirebaseFirestore.instance;
   getData() async {
     await getPoke().then((value) async {
       for (int i = 0; i < value!.pokemon!.length; i++) {
@@ -52,6 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     getData();
+    addUser();
     super.initState();
   }
 
@@ -63,12 +75,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: ListView(
             children: <Widget>[
               UserAccountsDrawerHeader(
-                accountName: Text(widget.user),
-                accountEmail: Text('@gmail.com'),
+                accountName: Text(''),
+                accountEmail: Text(widget.email!),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: Text(
-                    widget.user[0],
+                    widget.email![0],
                     style: TextStyle(fontSize: 40),
                   ),
                 ),
@@ -88,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 title: Text('Logout'),
                 onTap: () {
-                  Navigator.pop(context);
+                  signOut();
                 },
               ),
             ],
@@ -96,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         appBar: AppBar(
           title: Text(
-            'Buscar',
+            'Busca y añade tus pokemons favoritos',
             style: TextStyle(color: Colors.black),
           ),
           iconTheme: IconThemeData(color: Colors.black),
@@ -105,9 +117,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
             IconButton(
               icon: Icon(Icons.search, color: Colors.black),
               onPressed: () {
-                showSearch(
+                final result = showSearch(
                     context: context,
-                    delegate: CustomSearchDelegate(poke: poke));
+                    delegate: CustomSearchDelegate(poke: fav));
+
+                result.then((value) => {
+                      print(value),
+                      if (poke.any(
+                          (element) => element.name.toString().contains(value)))
+                        {
+                          print('here'),
+                          setState(() {
+                            if (mounted) {
+                              yeah = poke
+                                  .where((element) =>
+                                      element.name.toString().contains(value))
+                                  .toList();
+                            }
+                          }),
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => PokePage(
+                                    poke: yeah.first,
+                                  )))
+                        }
+                    });
               },
             ),
           ],
@@ -115,84 +148,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            gridview(),
-          ],
-        ));
-  }
-
-  Widget buildFloatingSearchBar() {
-    final isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
-
-    return FloatingSearchBar(
-        automaticallyImplyBackButton: false,
-        controller: controller,
-        hint: 'Favoritos',
-        scrollPadding: const EdgeInsets.only(top: 16, bottom: 56),
-        transitionDuration: const Duration(milliseconds: 800),
-        transitionCurve: Curves.easeInOut,
-        physics: const BouncingScrollPhysics(),
-        axisAlignment: isPortrait ? 0.0 : -1.0,
-        openAxisAlignment: 0.0,
-        width: isPortrait ? 800 : 500,
-        debounceDelay: const Duration(milliseconds: 500),
-        onQueryChanged: (query) {
-          query = controller.query;
-        },
-        // Specify a custom transition to be used for
-        // animating between opened and closed stated.
-        transition: CircularFloatingSearchBarTransition(),
-        actions: [
-          FloatingSearchBarAction(
-            showIfOpened: false,
-            child: CircularButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {},
-            ),
-          ),
-          FloatingSearchBarAction.searchToClear(
-            showIfClosed: false,
-          ),
-        ],
-        builder: (context, transition) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Material(
-              color: Colors.white,
-              elevation: 4.0,
+            Container(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: fav.map((poke) {
-                  return Container(
-                    height: 112,
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                              image: DecorationImage(
-                                  image: NetworkImage(poke.url!))),
-                        ),
-                        Text(poke.name!),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                children: [
+                  gridview(poke.length),
+                ],
               ),
-            ),
-          );
-        },
-        body: Stack(
-          children: [
-            Column(
-              children: [],
             )
           ],
         ));
   }
 
-  gridview() {
+  gridview(int lenght) {
     return FloatingSearchBarScrollNotifier(
       child: AnimationLimiter(
         child: Container(
@@ -201,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             flex: 1,
             child: GridView.builder(
                 padding: EdgeInsets.only(top: 10),
-                itemCount: poke.length,
+                itemCount: lenght,
                 shrinkWrap: true,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 6,
@@ -219,20 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: FadeInAnimation(
                         child: InkWell(
                           onTap: () {
-                            setState(() {
-                              fav.add(new Poke(
-                                  url: poke[index].url,
-                                  name: poke[index].name));
-                            });
-
-                            Fluttertoast.showToast(
-                                msg: "Se añadio a tus favoritos",
-                                toastLength: Toast.LENGTH_SHORT,
-                                gravity: ToastGravity.CENTER,
-                                timeInSecForIosWeb: 4,
-                                backgroundColor: Colors.red,
-                                textColor: Colors.white,
-                                fontSize: 16.0);
+                            pokeFav(index);
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -274,6 +228,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  SharedPreferences? prefs;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  var userId;
+
+  /// cerrar sesion
+  Future<String> signOut() async {
+    await _auth.signOut();
+    prefs = await SharedPreferences.getInstance();
+    prefs!.setBool('auth', false);
+
+    widget.email = null;
+    Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (_) => LoginPage()), (route) => false)
+        .then((value) => {
+              Fluttertoast.showToast(
+                  msg: "Cerro sesion",
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.CENTER,
+                  timeInSecForIosWeb: 4,
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
+                  fontSize: 16.0)
+            });
+    return 'User signed out';
+  }
+
+  Future<void> addUser() async {
+    CollectionReference users = fireStore.collection('Usuarios');
+    setState(() {
+      userId = users.id;
+    });
+    return users
+        .add({'Name': widget.email}).then((value) => {print('usersAdd')});
+  }
+
+  pokeFav(int index) async {
+    CollectionReference id = fireStore.collection('Usuarios');
+    DocumentReference parente = fireStore.collection('Usuarios').doc();
+
+    setState(() {
+      fav.add(Poke(name: poke[index].name, url: poke[index].url));
+    });
+
+    Fluttertoast.showToast(
+        msg: "Se añadio a tus favoritos",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 2,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0);
+    /*  parente.set({
+      'Name': [poke[index].name].toList(),
+      'url': [poke[index].url].toList(),
+    }).then((value) => {print('ok')}); */
+  }
 }
 
 class Poke {
@@ -311,7 +322,10 @@ class CustomSearchDelegate extends SearchDelegate {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back),
+      icon: AnimatedIcon(
+        progress: transitionAnimation,
+        icon: AnimatedIcons.menu_home,
+      ),
       onPressed: () {
         close(context, null);
       },
@@ -334,9 +348,7 @@ class CustomSearchDelegate extends SearchDelegate {
               BoxShadow(color: Colors.grey, blurRadius: 7, offset: Offset(0, 5))
             ]),
         child: Column(
-          children: [
-            Text(query),
-          ],
+          children: [Text(query)],
         ),
       ),
     );
@@ -345,31 +357,39 @@ class CustomSearchDelegate extends SearchDelegate {
   /// construye posibles sugerencias de busqueda
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestionsList =
-        poke?.where((p) => p.name!.toLowerCase().contains(query)).toList();
+    final suggestionsList = poke
+        ?.where((element) => element.name!.toLowerCase().startsWith(query))
+        .toList();
 
     return ListView.builder(
       itemCount: suggestionsList?.length ?? 0,
       itemBuilder: (context, index) {
         return ListTile(
-          onTap: () async {},
-          leading: Icon(Icons.search),
+          onTap: () async {
+            query = suggestionsList![index].name!;
+
+            close(
+              context,
+              query,
+            );
+          },
+          leading: Image.network(suggestionsList![index].url!),
           title: RichText(
             text: TextSpan(
-              text: poke![index].name!.substring(0, query.length),
+              text: suggestionsList[index].name!.substring(0, query.length),
               style: TextStyle(
                 color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),
               children: [
                 TextSpan(
-                  text: poke![index].name!.substring(query.length),
+                  text: suggestionsList[index].name!.substring(query.length),
                   style: TextStyle(color: Colors.grey),
                 ),
               ],
             ),
           ),
-          subtitle: Text(poke![index].name!),
+          subtitle: Text(suggestionsList[index].name!),
         );
       },
     );

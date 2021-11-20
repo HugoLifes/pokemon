@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:pokemon/loginMenu.dart';
 import 'package:pokemon/profileScreen.dart';
 import 'package:pokemon/signUpMenu.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   SystemChrome.setSystemUIOverlayStyle(
@@ -22,9 +23,20 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+SharedPreferences? prefs;
+
 class _MyAppState extends State<MyApp> {
   bool _initialized = false;
   bool _error = false;
+  bool? iniciado = false;
+
+  initPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      iniciado = prefs!.getBool('auth');
+    });
+  }
 
   // Define an async function to initialize FlutterFire
   void initializeFlutterFire() async {
@@ -47,6 +59,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    initPrefs();
     initializeFlutterFire();
   }
 

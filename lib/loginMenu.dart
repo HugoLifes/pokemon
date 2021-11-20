@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:gradient_widgets/gradient_widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../profileScreen.dart';
 
 class LoginPage extends StatefulWidget {
@@ -22,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   // Getting value from TextField widget.
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  String? user;
 
   Future userLogin() async {
     // Showing CircularProgressIndicator.
@@ -38,10 +40,9 @@ class _LoginPageState extends State<LoginPage> {
     // SERVER LOGIN API URL
     FirebaseAuth auth = FirebaseAuth.instance;
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-              email: emailController.text, password: passwordController.text);
-
+      UserCredential userCredential = await auth.signInWithEmailAndPassword(
+          email: emailController.text, password: passwordController.text);
+      SharedPreferences? prefs = await SharedPreferences.getInstance();
       auth.authStateChanges().listen((event) {
         if (event!.email != null) {
           Fluttertoast.showToast(
@@ -52,17 +53,37 @@ class _LoginPageState extends State<LoginPage> {
               backgroundColor: Colors.red,
               textColor: Colors.white,
               fontSize: 16.0);
+          prefs.setBool('auth', true);
+          print(userCredential.user!.uid);
           // Navigate to Profile Screen & Sending Email to Next Screen.
-          Navigator.of(context).pushReplacementNamed('/screen2');
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+              builder: (context) => ProfileScreen(
+                    user: userCredential.user!.uid,
+                    email: event.email,
+                  )));
         } else {
           print('no');
         }
       });
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
-        print('No user found for that email.');
+        Fluttertoast.showToast(
+            msg: "No se encontro el usuario",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 4,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
       } else if (e.code == 'wrong-password') {
-        print('Wrong password provided for that user.');
+        Fluttertoast.showToast(
+            msg: "Contraseña erronea",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 4,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
       }
     }
   }

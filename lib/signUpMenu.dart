@@ -6,6 +6,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gradient_widgets/gradient_widgets.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../profileScreen.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -29,14 +31,14 @@ class _SignUpPageState extends State<SignUpPage> {
     FirebaseAuth auth = FirebaseAuth.instance;
 
     try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential = await auth.createUserWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
       print(userCredential.user);
       print(userCredential.additionalUserInfo);
+      SharedPreferences? prefs = await SharedPreferences.getInstance();
 
       auth.authStateChanges().listen((event) {
         if (event!.email != null) {
@@ -49,16 +51,36 @@ class _SignUpPageState extends State<SignUpPage> {
               textColor: Colors.white,
               fontSize: 16.0);
           // Navigate to Profile Screen & Sending Email to Next Screen.
-          Navigator.of(context).pushReplacementNamed('/screen2');
+          prefs.setBool('auth', true);
+
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+              builder: (context) => ProfileScreen(
+                    user: '',
+                    email: event.email,
+                  )));
         } else {
           print('no');
         }
       });
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
-        print('The password provided is too weak.');
+        return Fluttertoast.showToast(
+            msg: "Contraseña corta",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 4,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
       } else if (e.code == 'email-already-in-use') {
-        print('The account already exists for that email.');
+        return Fluttertoast.showToast(
+            msg: "Ya existe esa cuenta",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 4,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
       }
     } catch (e) {
       print(e);
