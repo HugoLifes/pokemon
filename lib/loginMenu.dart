@@ -104,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
           Container(
               decoration: BoxDecoration(
                   image: DecorationImage(
-                      image: AssetImage('assets/images/poke2.jpeg'),
+                      image: AssetImage('assets/images/kushau.jpg'),
                       fit: BoxFit.cover))),
           vistaMenu(size),
           Container(
@@ -112,15 +112,17 @@ class _LoginPageState extends State<LoginPage> {
             padding: EdgeInsets.only(top: 300, right: 100),
             child: Column(
               children: [
-                Text('Pokemon',
+                Text('Kushau',
                     style: GoogleFonts.getFont(
                       'Press Start 2P',
-                      fontSize: 30,
+                      fontSize: 50,
+                      color: Colors.white,
                       fontWeight: FontWeight.w700,
                     )),
-                Text('Search',
+                Text('Busquedas',
                     style: GoogleFonts.getFont('Press Start 2P',
                         fontSize: 30,
+                        color: Colors.white,
                         fontWeight: FontWeight.w700,
                         fontStyle: FontStyle.italic)),
               ],

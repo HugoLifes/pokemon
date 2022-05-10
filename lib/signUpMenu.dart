@@ -91,35 +91,41 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
+        appBar: AppBar(
+          actions: [],
+          leading: BackButton(color: Colors.white),
+        ),
         body: Stack(
-      children: [
-        Container(
-            decoration: BoxDecoration(
-                image: DecorationImage(
-                    image: AssetImage('assets/images/poke2.jpeg'),
-                    fit: BoxFit.cover))),
-        vistaMenu(size),
-        Container(
-          alignment: Alignment.centerRight,
-          padding: EdgeInsets.only(top: 300, right: 100),
-          child: Column(
-            children: [
-              Text('Pokemon',
-                  style: GoogleFonts.getFont(
-                    'Press Start 2P',
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                  )),
-              Text('Search',
-                  style: GoogleFonts.getFont('Press Start 2P',
-                      fontSize: 30,
-                      fontWeight: FontWeight.w700,
-                      fontStyle: FontStyle.italic)),
-            ],
-          ),
-        )
-      ],
-    ));
+          children: [
+            Container(
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                        image: AssetImage('assets/images/kushau.jpg'),
+                        fit: BoxFit.cover))),
+            vistaMenu(size),
+            Container(
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.only(top: 300, right: 100),
+              child: Column(
+                children: [
+                  Text('Kushau',
+                      style: GoogleFonts.getFont(
+                        'Press Start 2P',
+                        fontSize: 50,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      )),
+                  Text('Busquedas',
+                      style: GoogleFonts.getFont('Press Start 2P',
+                          fontSize: 30,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontStyle: FontStyle.italic)),
+                ],
+              ),
+            )
+          ],
+        ));
   }
 
   vistaMenu(Size size) {

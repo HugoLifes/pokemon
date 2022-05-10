@@ -25,6 +25,7 @@ class ProfileScreen extends StatefulWidget {
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
+//llamada api
 Future<Pokemons?> getPoke() async {
   Uri uri = Uri.https("raw.githubusercontent.com",
       "/Biuni/PokemonGO-Pokedex/master/pokedex.json");
@@ -47,7 +48,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Poke? hi;
   List<Poke> yeah = [];
   FirebaseFirestore fireStore = FirebaseFirestore.instance;
-  getData() async {
+
+  Future getData() async {
     await getPoke().then((value) async {
       for (int i = 0; i < value!.pokemon!.length; i++) {
         setState(() {
@@ -62,8 +64,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void initState() {
-    getData();
-    addUser();
     super.initState();
   }
 
@@ -108,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         appBar: AppBar(
           title: Text(
-            'Busca y añade tus pokemons favoritos',
+            'Busqueda',
             style: TextStyle(color: Colors.black),
           ),
           iconTheme: IconThemeData(color: Colors.black),
@@ -117,7 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             IconButton(
               icon: Icon(Icons.search, color: Colors.black),
               onPressed: () {
-                final result = showSearch(
+/*                 final result = showSearch(
                     context: context,
                     delegate: CustomSearchDelegate(poke: fav));
 
@@ -140,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     poke: yeah.first,
                                   )))
                         }
-                    });
+                    }); */
               },
             ),
           ],
@@ -165,20 +165,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Container(
           //padding: EdgeInsets.only(top: 60),
           child: Expanded(
-            flex: 1,
             child: GridView.builder(
                 padding: EdgeInsets.only(top: 10),
-                itemCount: lenght,
+                itemCount: 4,
                 shrinkWrap: true,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 6,
-                  childAspectRatio: 1.5,
+                  crossAxisCount: 2,
+                  childAspectRatio: 3.0,
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
                 ),
                 itemBuilder: (_, int index) {
                   return AnimationConfiguration.staggeredGrid(
-                    columnCount: poke.length,
+                    columnCount: 4,
                     duration: Duration(seconds: 3),
                     position: 2,
                     child: ScaleAnimation(
@@ -186,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: FadeInAnimation(
                         child: InkWell(
                           onTap: () {
-                            pokeFav(index);
+                            //pokeFav(index);
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -203,16 +202,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Container(
                                   width: 100,
                                   height: 100,
-                                  decoration: BoxDecoration(
-                                      image: DecorationImage(
-                                          image:
-                                              NetworkImage(poke[index].url!))),
+                                  color: Colors.orange,
                                 ),
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
-                                    Text(poke[index].name!),
+                                    Text('hellow'),
                                   ],
                                 )
                               ],
