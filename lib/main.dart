@@ -2,9 +2,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pokemon/loginMenu.dart';
+import 'package:pokemon/profileEdit.dart';
+//import 'package:pokemon/newPost.dart';
 import 'package:pokemon/profileScreen.dart';
 import 'package:pokemon/signUpMenu.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'newPost.dart';
 
 void main() async {
   SystemChrome.setSystemUIOverlayStyle(
@@ -19,6 +23,10 @@ void main() async {
 
 class MyApp extends StatefulWidget {
   // This widget is the root of your application.
+  static init() async {
+    prefs = await SharedPreferences.getInstance();
+  }
+
   @override
   State<MyApp> createState() => _MyAppState();
 }
@@ -28,21 +36,14 @@ SharedPreferences? prefs;
 class _MyAppState extends State<MyApp> {
   bool _initialized = false;
   bool _error = false;
-  bool? iniciado = false;
-
-  initPrefs() async {
-    prefs = await SharedPreferences.getInstance();
-
-    setState(() {
-      iniciado = prefs!.getBool('auth');
-    });
-  }
+  bool? iniciado;
 
   // Define an async function to initialize FlutterFire
   void initializeFlutterFire() async {
     try {
       // Wait for Firebase to initialize and set `_initialized` state to true
       await Firebase.initializeApp();
+
       setState(() {
         _initialized = true;
       });
@@ -59,7 +60,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    initPrefs();
+    MyApp.init();
     initializeFlutterFire();
   }
 
@@ -75,7 +76,9 @@ class _MyAppState extends State<MyApp> {
       routes: {
         '/': (BuildContext context) => LoginPage(),
         '/screen1': (BuildContext context) => SignUpPage(),
-        '/screen2': (BuildContext context) => ProfileScreen()
+        '/screen2': (BuildContext context) => ProfileScreen(),
+        '/screen3': (BuildContext context) => MakeNewPost(),
+        '/screen4': (BuildContext context) => EditProfile()
       },
     );
   }

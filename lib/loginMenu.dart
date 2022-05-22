@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:gradient_widgets/gradient_widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
+import 'package:pokemon/main.dart';
+import 'package:pokemon/signUpMenu.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../profileScreen.dart';
 
@@ -24,6 +26,7 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   String? user;
+  bool? iniciado;
 
   Future userLogin() async {
     // Showing CircularProgressIndicator.
@@ -53,8 +56,9 @@ class _LoginPageState extends State<LoginPage> {
               backgroundColor: Colors.red,
               textColor: Colors.white,
               fontSize: 16.0);
-          prefs.setBool('auth', true);
+
           print(userCredential.user!.uid);
+          someData(true, event.email, userCredential.user!.uid);
           // Navigate to Profile Screen & Sending Email to Next Screen.
           Navigator.of(context).pushReplacement(MaterialPageRoute(
               builder: (context) => ProfileScreen(
@@ -75,6 +79,9 @@ class _LoginPageState extends State<LoginPage> {
             backgroundColor: Colors.red,
             textColor: Colors.white,
             fontSize: 16.0);
+        setState(() {
+          visible = false;
+        });
       } else if (e.code == 'wrong-password') {
         Fluttertoast.showToast(
             msg: "Contraseña erronea",
@@ -252,7 +259,8 @@ class _LoginPageState extends State<LoginPage> {
             ),
             TextButton(
                 onPressed: () {
-                  Navigator.of(context).pushReplacementNamed('/screen1');
+                  Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => SignUpPage()));
                 },
                 child: Text(
                   'Registrate con nosotros',

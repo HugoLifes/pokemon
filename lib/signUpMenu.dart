@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -22,13 +23,22 @@ class _SignUpPageState extends State<SignUpPage> {
   bool visible = false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _formKey2 = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey3 = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey4 = GlobalKey<FormState>();
   // Getting value from TextField widget.
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
+  final nameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  List hilos = [];
   Future register() async {
     print(emailController.text);
+    print(lastNameController.text);
+    print(passwordController.text);
+    print(nameController.text);
     FirebaseAuth auth = FirebaseAuth.instance;
+    FirebaseFirestore fireStore = FirebaseFirestore.instance;
+    CollectionReference users = fireStore.collection('Usuarios');
 
     try {
       UserCredential userCredential = await auth.createUserWithEmailAndPassword(
@@ -52,6 +62,14 @@ class _SignUpPageState extends State<SignUpPage> {
               fontSize: 16.0);
           // Navigate to Profile Screen & Sending Email to Next Screen.
           prefs.setBool('auth', true);
+          users.add({
+            'Apellido': lastNameController.text,
+            'Nombre': nameController.text,
+            'ReferidoKuchau': false,
+            'contraseña': passwordController.text,
+            'correo': emailController.text,
+            'esPremium': false,
+          });
 
           Navigator.of(context).pushReplacement(MaterialPageRoute(
               builder: (context) => ProfileScreen(
@@ -87,20 +105,43 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
+  Future<void> init() async {
+    FirebaseFirestore fireStore = FirebaseFirestore.instance;
+    fireStore
+        .collection('Hilos')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen((event) {
+      event.docs.forEach((element) {});
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
         appBar: AppBar(
+          title: Text('Formato de Registro'),
           actions: [],
-          leading: BackButton(color: Colors.white),
+          leading: BackButton(
+            color: Colors.white,
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
         ),
         body: Stack(
           children: [
             Container(
                 decoration: BoxDecoration(
                     image: DecorationImage(
-                        image: AssetImage('assets/images/kushau.jpg'),
+                        image: AssetImage('assets/images/mate.png'),
                         fit: BoxFit.cover))),
             vistaMenu(size),
             Container(
@@ -112,13 +153,13 @@ class _SignUpPageState extends State<SignUpPage> {
                       style: GoogleFonts.getFont(
                         'Press Start 2P',
                         fontSize: 50,
-                        color: Colors.white,
+                        color: Colors.black,
                         fontWeight: FontWeight.w700,
                       )),
                   Text('Busquedas',
                       style: GoogleFonts.getFont('Press Start 2P',
                           fontSize: 30,
-                          color: Colors.white,
+                          color: Colors.black,
                           fontWeight: FontWeight.w700,
                           fontStyle: FontStyle.italic)),
                 ],
@@ -140,8 +181,7 @@ class _SignUpPageState extends State<SignUpPage> {
           children: <Widget>[
             Padding(
                 padding: const EdgeInsets.all(10.0),
-                child: Text('Create account with us',
-                    style: TextStyle(fontSize: 21))),
+                child: Text('Crea tu cuenta', style: TextStyle(fontSize: 21))),
             Container(
                 width: 280,
                 padding: EdgeInsets.all(10.0),
@@ -151,11 +191,44 @@ class _SignUpPageState extends State<SignUpPage> {
                     controller: emailController,
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Introduce tu contraseña';
+                        return 'Introduce tu correo';
                       }
                     },
                     autocorrect: true,
                     decoration: InputDecoration(hintText: 'Registra tu email'),
+                  ),
+                )),
+            Container(
+                width: 280,
+                padding: EdgeInsets.all(10.0),
+                child: Form(
+                  key: _formKey3,
+                  child: TextFormField(
+                    controller: nameController,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return 'Introduce tu nombre';
+                      }
+                    },
+                    autocorrect: true,
+                    decoration: InputDecoration(hintText: 'Registra tu nombre'),
+                  ),
+                )),
+            Container(
+                width: 280,
+                padding: EdgeInsets.all(10.0),
+                child: Form(
+                  key: _formKey4,
+                  child: TextFormField(
+                    controller: lastNameController,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return 'Introduce tu apellido';
+                      }
+                    },
+                    autocorrect: true,
+                    decoration:
+                        InputDecoration(hintText: 'Registra tu apellido'),
                   ),
                 )),
             Container(
@@ -205,6 +278,8 @@ class _SignUpPageState extends State<SignUpPage> {
               color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
       callback: () {
         if (_formKey.currentState!.validate() &&
+            _formKey3.currentState!.validate() &&
+            _formKey4.currentState!.validate() &&
             _formKey2.currentState!.validate()) {
           register();
         } else {
